@@ -19,6 +19,7 @@ namespace Questor.Modules
         private DateTime? _clearPocketTimeout;
         private int _currentAction;
         private DateTime _lastActivateAction;
+        private readonly Dictionary<long, DateTime> _lastWeaponReload = new Dictionary<long, DateTime>();
         private double _lastX;
         private double _lastY;
         private double _lastZ;
@@ -131,7 +132,8 @@ namespace Questor.Modules
                     BookmarkPocketForSalvaging();
                 ReloadAll();
 
-                // Activate it and move to the next Pocket
+                // Reload weapons and activate gate to move to the next pocket
+                ReloadAll();
                 closest.Activate();
 
                 // Do not change actions, if NextPocket gets a timeout (>2 mins) then it reverts to the last action
@@ -537,6 +539,9 @@ namespace Questor.Modules
                     // Add bookmark (before we're done)
                     if (Settings.Instance.CreateSalvageBookmarks)
                         BookmarkPocketForSalvaging();
+                    ReloadAll();
+
+                    // Reload weapons
                     ReloadAll();
 
                     State = MissionControllerState.Done;
