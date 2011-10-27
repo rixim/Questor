@@ -127,6 +127,7 @@ namespace Questor.Modules
             UseMissionShip = false;
             ArmLoadedCache = false;
             missionAmmo = new List<Ammo>();
+            MissionUseDrones = null;
 
         }
 
@@ -449,6 +450,7 @@ namespace Questor.Modules
                                                             // fitting from being loaded in arm.cs
         public List<Ammo> missionAmmo;
         public int MissionWeaponGroupId = 0;
+        public bool? MissionUseDrones;
         public bool StopTimeSpecified { get; set; }
         public DateTime StopTime { get; set; }
 
