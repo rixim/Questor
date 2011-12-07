@@ -224,7 +224,8 @@ namespace Questor.Modules
 
             var shipsCargo = cargo.Items.Select(i => new ItemCache(i)).ToList();
             var freeCargoCapacity = cargo.Capacity - cargo.UsedCapacity;
-            var lootWindows = Cache.Instance.DirectEve.Windows.OfType<DirectContainerWindow>().Where(w => w.Type == "form.LootCargoView");
+            var lootWindows = Cache.Instance.DirectEve.Windows.OfType<DirectContainerWindow>().Where(w => !string.IsNullOrEmpty(w.Name) && (w.Name.StartsWith("loot") || w.Name.StartsWith("('loot")));
+
             foreach (var window in lootWindows)
             {
                 // The window is not ready, then continue
