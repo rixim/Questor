@@ -92,8 +92,14 @@ namespace Questor.Modules
                 }
 
                 // If we have less then x% cap, do not activate or deactivate the module
-                activate &= Cache.Instance.DirectEve.ActiveShip.CapacitorPercentage > Settings.Instance.MinimumPropulsionModuleCapacitor;
-                deactivate |= Cache.Instance.DirectEve.ActiveShip.CapacitorPercentage < Settings.Instance.MinimumPropulsionModuleCapacitor;
+                if (Cache.Instance.DirectEve.ActiveShip.CapacitorPercentage < Settings.Instance.MinimumPropulsionModuleCapacitor)
+                {
+                    activate = false;
+                    if (module.IsActive && !module.IsDeactivating)
+                        deactivate = true;
+                    else
+                        deactivate = false;
+                }
 
                 if (activate)
                     module.Click();
