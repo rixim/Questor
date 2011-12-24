@@ -28,7 +28,6 @@ namespace Questor.Modules
         private bool _waiting;
         private DateTime _waitingSince;
         private DateTime _lastAlign;
-        private readonly Dictionary<long, DateTime> _lastWeaponReload = new Dictionary<long, DateTime>();
 
         public long AgentId { get; set; }
 
