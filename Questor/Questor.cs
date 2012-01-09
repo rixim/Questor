@@ -379,7 +379,7 @@ namespace Questor
                         line2 += ((int)MissionSpaceSolarID) + ";";
                         line2 += MissionEnemyFaction + ";";
                         line2 += ((int)MissionEndTime.Subtract(Started).TotalMinutes) + ";";
-                        line2 += ((int)DateTime.Now.Subtract(MissionEndTime).TotalMinutes) + ";";
+                        line2 += ((int)DateTime.Now.Subtract(MissionEndTime).TotalMinutes) + ";\r\n";
                         File.AppendAllText(filename2, line2);
                     }
 
