@@ -374,10 +374,10 @@ namespace Questor
                         // Do additional logging of mission space faction ID and salvage/mission times seperately
                         var filename2 = Path.Combine(path, Cache.Instance.FilterPath(CharacterName) + ".morestats.log");
                         if (!File.Exists(filename2))
-                            File.AppendAllText(filename2, "SpaceFactionID;EnemyFactionID;MissionTime;SalvageTime;\r\n");
+                            File.AppendAllText(filename2, "Time;SpaceSolarID;EnemyFactionName;MissionTime;SalvageTime;\r\n");
                         var line2 = string.Format("{0:dd/MM/yyyy HH:mm:ss}", DateTime.Now) + ";";
-                        line2 += ((int)MissionSpaceSolarID);
-                        line2 += MissionEnemyFaction;
+                        line2 += ((int)MissionSpaceSolarID) + ";";
+                        line2 += MissionEnemyFaction + ";";
                         line2 += ((int)MissionEndTime.Subtract(Started).TotalMinutes) + ";";
                         line2 += ((int)DateTime.Now.Subtract(MissionEndTime).TotalMinutes) + ";";
                         File.AppendAllText(filename2, line2);
