@@ -19,7 +19,6 @@ namespace Questor.Modules
         private DateTime? _clearPocketTimeout;
         private int _currentAction;
         private DateTime _lastActivateAction;
-        private readonly Dictionary<long, DateTime> _lastWeaponReload = new Dictionary<long, DateTime>();
         private double _lastX;
         private double _lastY;
         private double _lastZ;
@@ -28,7 +27,8 @@ namespace Questor.Modules
         private bool _waiting;
         private DateTime _waitingSince;
         private DateTime _lastAlign;
-    
+        private readonly Dictionary<long, DateTime> _lastWeaponReload = new Dictionary<long, DateTime>();
+
         public long AgentId { get; set; }
 
         public MissionController()
@@ -81,8 +81,20 @@ namespace Questor.Modules
             // Nothing to loot
             if (Cache.Instance.UnlootedContainers.Count() < Settings.Instance.MinimumWreckCount)
             {
-                Logging.Log("MissionController: Not created bookmarked because the pocket has [" + Cache.Instance.UnlootedContainers.Count() + "] wrecks and the minimum is [" + Settings.Instance.MinimumWreckCount + "]");
-                return;
+                // If Settings.Instance.LootEverything is false we may leave behind a lot of unlooted containers.
+                // This scenario only happens when all wrecks are within tractor range and you have a salvager 
+                // (typically only with a Golem).  Check to see if there are any cargo containers in space.  Cap 
+                // boosters may cause an unneeded salvage trip but that is better than leaving millions in loot behind.  
+                if (!Settings.Instance.LootEverything && Cache.Instance.Containers.Count() < Settings.Instance.MinimumWreckCount)
+                {
+                    Logging.Log("MissionController: No bookmark created because the pocket has [" + Cache.Instance.Containers.Count() + "] wrecks/containers and the minimum is [" + Settings.Instance.MinimumWreckCount + "]");
+                    return;
+                }
+                else if (Settings.Instance.LootEverything)
+                {
+                    Logging.Log("MissionController: No bookmark created because the pocket has [" + Cache.Instance.UnlootedContainers.Count() + "] wrecks/containers and the minimum is [" + Settings.Instance.MinimumWreckCount + "]");
+                    return;
+                }
             }
 
             // Do we already have a bookmark?
@@ -286,11 +298,12 @@ namespace Questor.Modules
 
                 if (DateTime.Now.Subtract(_lastAlign ).TotalMinutes > 2)
                 {
-                // Probably never happens
-                closest.AlignTo();
-                _lastAlign = DateTime.Now;
+                    // Probably never happens
+                    closest.AlignTo();
+                     _lastAlign = DateTime.Now;
                 }
             }
+
         }
 
         private void WaitUntilTargeted(Action action)

@@ -204,6 +204,8 @@ namespace Questor.Modules
         /// </summary>
         public bool IsMissionPocketDone { get; set; }
 
+        public string ExtConsole { get; set; }
+
         public long AgentId
         {
             get
@@ -587,7 +589,11 @@ namespace Questor.Modules
             var missionName = FilterPath(mission.Name);
             var missionXmlPath = Path.Combine(Settings.Instance.MissionsPath, missionName + ".xml");
             if (!File.Exists(missionXmlPath))
+            {
+                //No mission file but we need to set some cache settings
+                OrbitDistance = Settings.Instance.OrbitDistance;
                 return new Action[0];
+            }
 
             try
             {

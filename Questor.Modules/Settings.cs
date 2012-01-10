@@ -46,7 +46,9 @@ namespace Questor.Modules
 
         public bool Disable3D { get; set; }
 
-        public int MinimumDelay { get; set; }
+        public bool SaveLog { get; set; }
+
+        public int maxLineConsole { get; set; }        public int MinimumDelay { get; set; }
 
         public int RandomDelay { get; set; }
 		public float minStandings { get; set; }
@@ -74,6 +76,8 @@ namespace Questor.Modules
         public bool UnloadLootAtStation { get; set; }
 
         public string AgentName { get; set; }
+
+        public string bookmarkWarpOut { get; set; }
 
         public string MissionsPath { get; set; }
 
@@ -170,6 +174,10 @@ namespace Questor.Modules
 
 				waitDecline = false;
 
+                SaveLog = false;
+
+                maxLineConsole = 1000;
+
                 Disable3D = false;
 
                 RandomDelay = 0;
@@ -189,6 +197,8 @@ namespace Questor.Modules
                 AmmoHangar = string.Empty;
 
                 MissionsPath = Path.Combine(path, "Missions");
+
+                bookmarkWarpOut = string.Empty;
 
                 MaximumHighValueTargets = 0;
                 MaximumLowValueTargets = 0;
@@ -247,6 +257,10 @@ namespace Questor.Modules
 
             waitDecline = (bool?) xml.Element("waitDecline") ?? false;
 
+            SaveLog = (bool?)xml.Element("saveLog") ?? false;
+
+            maxLineConsole = (int?)xml.Element("maxLineConsole") ?? 1000;
+
             Disable3D = (bool?) xml.Element("disable3D") ?? false;
 
             RandomDelay = (int?) xml.Element("randomDelay") ?? 0;
@@ -280,6 +294,8 @@ namespace Questor.Modules
             UnloadLootAtStation = (bool?) xml.Element("unloadLootAtStation") ?? false;
 
             AgentName = (string) xml.Element("agentName");
+
+            bookmarkWarpOut = (string)xml.Element("bookmarkWarpOut");
 
             var missionsPath = (string) xml.Element("missionsPath");
             MissionsPath = !string.IsNullOrEmpty(missionsPath) ? Path.Combine(path, missionsPath) : Path.Combine(path, "Missions");
