@@ -237,15 +237,6 @@ namespace Questor
 
             _lastPulse = DateTime.Now;
 
-            // Some more scheduler checks, possibly unnecessary
-            if (_chantlingScheduler)
-            {
-                if (_directEve.Login.IsConnecting || _directEve.Login.IsLoading)
-                    return;
-                if (!_directEve.Login.AtLogin && !_directEve.Login.AtCharacterSelection)
-                    return;
-            }
-
             // If the session is ready, then we are done :)
             if (_directEve.Session.IsReady)
             {
