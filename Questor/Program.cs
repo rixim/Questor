@@ -37,10 +37,16 @@ namespace Questor
         private static string _scriptFile;
         private static bool   _loginOnly;
         private static bool   _showHelp;
+        private static bool _chantlingScheduler;
 
+        private static DateTime _startTime;
+        public static DateTime _stopTime;
+        private static double minutesToStart;
+        private static bool _readyToStarta;
         private static bool _readyToStart;
 
         static System.Timers.Timer _timer = new System.Timers.Timer();
+        private static int _randStartDelay = 30;
         private static Random _r = new Random();
         public static bool stopTimeSpecified = false;
 
@@ -67,6 +73,8 @@ namespace Questor
                 v => _scriptFile = v },
                 { "l|login", "login only and exit.",
                 v => _loginOnly = v != null },
+                { "x|chantling", "use chantling's scheduler",
+                v => _chantlingScheduler = v != null },
                 { "h|help", "show this message and exit",
                 v => _showHelp = v != null },
                 };
@@ -92,6 +100,106 @@ namespace Questor
                 p.WriteOptionDescriptions(sw);
                 Logging.Log(sw.ToString());
                 return;
+            }
+
+            if (_chantlingScheduler && string.IsNullOrEmpty(_character))
+            {
+                Logging.Log("Error: to use chantling's scheduler, you also need to provide a character name!");
+                return;
+            }
+
+            if (_chantlingScheduler && !string.IsNullOrEmpty(_character))
+            {
+                var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                _character = _character.Replace("\"", "");  // strip quotation marks if any are present
+
+                CharSchedules = new List<CharSchedule>();
+                var values = XDocument.Load(Path.Combine(path, "Schedules.xml"));
+                foreach (var value in values.Root.Elements("char"))
+                    CharSchedules.Add(new CharSchedule(value));
+
+                var _schedule = CharSchedules.FirstOrDefault(v => v.Name == _character);
+                if (_schedule == null)
+                {
+                    Logging.Log("[Startup] Error - character not found!");
+                    return;
+                }
+                else
+                {
+                    Logging.Log("[Startup] User: " + _schedule.User + " PW: " + _schedule.PW + " Name: " + _schedule.Name
+                        + " Start: " + _schedule.Start + " Stop: " + _schedule.Stop + " RunTime: " + _schedule.RunTime);
+                    if (_schedule.User == null || _schedule.PW == null)
+                    {
+                        Logging.Log("[Startup] Error - Login details not specified in Schedules.xml!");
+                        return;
+                    }
+                    else
+                    {
+                        _username = _schedule.User;
+                        _password = _schedule.PW;
+                    }
+                    _startTime = _schedule.Start;
+                    if (_schedule.startTimeSpecified)
+                        _startTime = _startTime.AddSeconds((double)(_r.Next(0, (_randStartDelay * 60))));
+                    _stopTime = _schedule.Stop;
+
+                    if ((DateTime.Now > _startTime))
+                    {
+                        if ((DateTime.Now.Subtract(_startTime).TotalMinutes < 720)) //if we're less than 12 hours past start time, start now
+                        {
+                            _startTime = DateTime.Now;
+                            _readyToStarta = true;
+                        }
+                        else
+                            _startTime = _startTime.AddDays(1); //otherwise, start tomorrow at start time
+                    }
+                    else
+                        if ((_startTime.Subtract(DateTime.Now).TotalMinutes > 720)) //if we're more than 12 hours shy of start time, start now
+                        {
+                            _startTime = DateTime.Now;
+                            _readyToStarta = true;
+                        }
+                    if (_stopTime < _startTime)
+                        _stopTime = _stopTime.AddDays(1);
+
+                    if (_schedule.RunTime > 0) //if runtime is specified, overrides stop time
+                        _stopTime = _startTime.AddHours(_schedule.RunTime);
+
+                    string _stopTimeText = "No stop time specified";
+                    stopTimeSpecified = _schedule.stopTimeSpecified;
+                    if (stopTimeSpecified)
+                        _stopTimeText = _stopTime.ToString();
+
+                    Logging.Log("[Startup] Start Time: " + _startTime + " - Stop Time: " + _stopTimeText);
+
+                    if (!_readyToStarta)
+                    {
+                        minutesToStart = _startTime.Subtract(DateTime.Now).TotalMinutes;
+                        Logging.Log("[Startup] Starting at " + _startTime + ". " + String.Format("{0:0.##}", minutesToStart) + " minutes to go.");
+                        _timer.Elapsed += new ElapsedEventHandler(TimerEventProcessor);
+                        if (minutesToStart > 0)
+                            _timer.Interval = (int)(minutesToStart * 60000);
+                        else
+                            _timer.Interval = 1000;
+                        _timer.Enabled = true;
+                        _timer.Start();
+                    }
+                    else
+                    {
+                        _readyToStart = true;
+                        Logging.Log("[Startup] Already passed start time.  Starting now.");
+                    }
+                }
+
+                _directEve = new DirectEve();
+                _directEve.OnFrame += OnFrame;
+
+                while (!_done)
+                {
+                    System.Threading.Thread.Sleep(50);
+                }
+
+                _directEve.Dispose();
             }
 
             if (!string.IsNullOrEmpty(_username) && !string.IsNullOrEmpty(_password) && !string.IsNullOrEmpty(_character))
@@ -128,6 +236,15 @@ namespace Questor
                 return;
 
             _lastPulse = DateTime.Now;
+
+            // Some more scheduler checks, possibly unnecessary
+            if (_chantlingScheduler)
+            {
+                if (_directEve.Login.IsConnecting || _directEve.Login.IsLoading)
+                    return;
+                if (!_directEve.Login.AtLogin && !_directEve.Login.AtCharacterSelection)
+                    return;
+            }
 
             // If the session is ready, then we are done :)
             if (_directEve.Session.IsReady)

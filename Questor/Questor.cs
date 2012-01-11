@@ -77,6 +77,7 @@ namespace Questor
             Cache.Instance.DirectEve = _directEve;
 
             Cache.Instance.StopTimeSpecified = Program.stopTimeSpecified;
+            Cache.Instance.StopTime = Program._stopTime;
 
             _directEve.OnFrame += OnFrame;
         }
