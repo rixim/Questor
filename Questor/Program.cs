@@ -355,6 +355,7 @@ namespace Questor
             _timer.Stop();
             Logging.Log("[Startup] Timer elapsed.  Starting now.");
             _readyToStart = true;
+            _readyToStarta = true;
         }
     
     }
