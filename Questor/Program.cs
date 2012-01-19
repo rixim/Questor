@@ -232,6 +232,9 @@ namespace Questor
             if (!_readyToStart)
                 return;
 
+            if (_chantlingScheduler && !string.IsNullOrEmpty(_character) && !_readyToStarta)
+                return;
+
             if (DateTime.Now.Subtract(_lastPulse).TotalSeconds < _pulsedelay)
                 return;
 

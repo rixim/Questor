@@ -1,6 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C# Express 2010
+# Visual Studio 2010
+# SharpDevelop 4.0.0.5949
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Questor", "Questor\Questor.csproj", "{0E528457-6A20-441F-94BB-84F6FC0EEE70}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ValueDump", "ValueDump\ValueDump.csproj", "{4E4C340D-0D20-4C96-A44B-55B86C5CEA77}"
@@ -103,6 +104,8 @@ Global
 		{393DE7BE-C792-477A-B884-75F174BAB9B6}.Release|Mixed Platforms.Build.0 = Release|x86
 		{393DE7BE-C792-477A-B884-75F174BAB9B6}.Release|x86.ActiveCfg = Release|x86
 		{393DE7BE-C792-477A-B884-75F174BAB9B6}.Release|x86.Build.0 = Release|x86
+		{ABCCE619-8340-4BE1-A241-2A7277FC433D}.Debug|x86.Build.0 = Debug|x86
+		{ABCCE619-8340-4BE1-A241-2A7277FC433D}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
