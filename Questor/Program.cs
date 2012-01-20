@@ -162,6 +162,18 @@ namespace Questor
                             close |= window.Html.Contains("The socket was closed");
                             close |= window.Html.Contains("accepting connections");
                             close |= window.Html.Contains("Could not connect");
+                            close |= window.Html.Contains("The specified proxy or server node");
+                            close |= window.Html.Contains("Starting up");
+                            close |= window.Html.Contains("Unable to connect to the selected server");
+                            close |= window.Html.Contains("Could not connect to the specified address");
+                            close |= window.Html.Contains("Connection Timeout");
+                            close |= window.Html.Contains("The cluster is not currently accepting connections");
+                            close |= window.Html.Contains("Your character is located within");
+                            close |= window.Html.Contains("The transport has not yet been connected");
+                            close |= window.Html.Contains("The user's connection has been usurped");
+                            close |= window.Html.Contains("The EVE cluster has reached its maximum user limit");
+                            close |= window.Html.Contains("The connection to the server was closed");
+                            close |= window.Html.Contains("The client's local session information is corrupt");
                             _pulsedelay = 60;
                         }
 
@@ -219,7 +231,7 @@ namespace Questor
             {
                 Logging.Log("[Startup] Login account [" + _username + "]");
                 _directEve.Login.Login(_username, _password);
-                _pulsedelay = 10;
+                _pulsedelay = 20;
                 return;
             }
 
