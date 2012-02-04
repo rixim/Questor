@@ -19,7 +19,6 @@ namespace Questor
     using global::Questor.Modules;
     using global::Questor.Storylines;
     using LavishScriptAPI;
-    using System.Windows.Forms;
 
     public class Questor
     {
@@ -338,7 +337,7 @@ namespace Questor
                         break;
                     }
 
-                    if (DateTime.Now.Subtract(Program.startTime).Minutes > Program.maxRuntime)
+                    if (DateTime.Now.Subtract(Program.startTime).Minutes > Program.maxRuntime && !Program._chantlingScheduler)
                     {
                         // quit questor
                         Logging.Log("Questor: Maximum runtime exceeded.  Quiting...");
