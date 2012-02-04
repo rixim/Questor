@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
+using System.Collections.Generic;
 using System.Xml.XPath;
 using System.Reflection;
 using System.Xml.Linq;
@@ -37,6 +38,7 @@ namespace Questor
         private static string _scriptFile;
         private static bool   _loginOnly;
         private static bool   _showHelp;
+
         private static bool _chantlingScheduler;
 
         private static DateTime _startTime;
@@ -52,12 +54,30 @@ namespace Questor
 
         private static DateTime _lastPulse;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
         static void Main(string[] args)
         {
+
             var p = new OptionSet() {
                 "Usage: questor [OPTIONS]",
                 "Run missions and make uber ISK.",
@@ -73,6 +93,8 @@ namespace Questor
                 v => _scriptFile = v },
                 { "l|login", "login only and exit.",
                 v => _loginOnly = v != null },
+
+
                 { "x|chantling", "use chantling's scheduler",
                 v => _chantlingScheduler = v != null },
                 { "h|help", "show this message and exit",
@@ -213,6 +235,12 @@ namespace Questor
                 while (!_done)
                 {
                     System.Threading.Thread.Sleep(50);
+
+                    if (DateTime.Now.Subtract(started).TotalSeconds > 180)
+                    {
+                        Logging.Log("auto login timed out after 3 minutes");
+                        break;
+                    }
                 }
 
                 _directEve.Dispose();
@@ -222,6 +250,8 @@ namespace Questor
                     return;
             }
 
+
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new frmMain());
@@ -229,6 +259,7 @@ namespace Questor
 
         static void OnFrame(object sender, EventArgs e)
         {
+            if (DateTime.Now.Subtract(_lastPulse).TotalSeconds < 10)
             if (!_readyToStart)
                 return;
 
@@ -243,16 +274,26 @@ namespace Questor
             // If the session is ready, then we are done :)
             if (_directEve.Session.IsReady)
             {
+                Logging.Log("We've successfully logged in");
                 Logging.Log("[Startup] We've successfully logged in");
                 _done = true;
                 return;
             }
+
+            // We are not ready, lets wait
+            if (_directEve.Login.IsConnecting || _directEve.Login.IsLoading)
+                return;
+
+            // Are we at the login or character selection screen?
+            if (!_directEve.Login.AtLogin && !_directEve.Login.AtCharacterSelection)
+                return;
 
             // We shouldn't get any window
             if (_directEve.Windows.Count != 0)
             {
                 foreach(var window in _directEve.Windows)
                 {
+                    if (string.IsNullOrEmpty(window.Html))
                     if (window.Name == "telecom")
                     {
                         Logging.Log("Questor: Closing telecom message...");
@@ -261,6 +302,8 @@ namespace Questor
                         continue;
                     }
 
+                    if (window.Html.Contains("Please make sure your characters are out of harms way"))
+                        continue;
                     // Modal windows must be closed
                     // But lets only close known modal windows
                     if (window.Name == "modal")
@@ -276,6 +319,7 @@ namespace Questor
                             _pulsedelay = 60;
                         }
 
+                    if (window.Name == "telecom")
                         if (close)
                         {
                             Logging.Log("Questor: Closing modal window...");
@@ -288,6 +332,7 @@ namespace Questor
                     if (string.IsNullOrEmpty(window.Html))
                         continue;
 
+                    Logging.Log("We've got an unexpected window, auto login halted.");
                     Logging.Log("[Startup] We've got an unexpected window, auto login halted.");
                     _done = true;
                     return;
@@ -328,6 +373,7 @@ namespace Questor
 
             if (_directEve.Login.AtLogin)
             {
+                Logging.Log("Login account [" + _username + "]");
                 Logging.Log("[Startup] Login account [" + _username + "]");
                 _directEve.Login.Login(_username, _password);
                 _pulsedelay = 10;
@@ -341,11 +387,13 @@ namespace Questor
                     if (slot.CharId.ToString() != _character && string.Compare(slot.CharName, _character, true) != 0)
                         continue;
 
+                    Logging.Log("Activating character [" + slot.CharName + "]");
                     Logging.Log("[Startup] Activating character [" + slot.CharName + "]");
                     slot.Activate();
                     return;
                 }
 
+                Logging.Log("Character id/name [" + _character + "] not found, retrying in 3 seconds");
                 Logging.Log("[Startup] Character id/name [" + _character + "] not found, retrying in 10 seconds");
             }
         }
