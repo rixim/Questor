@@ -37,9 +37,12 @@ namespace Questor
         private static string _scriptFile;
         private static bool   _loginOnly;
         private static bool   _showHelp;
-        private static bool _chantlingScheduler;
+        public static bool _chantlingScheduler;
+        private static int _maxRuntime;
 
         private static DateTime _startTime;
+
+        private static DateTime _startTimeChantling;
         public static DateTime _stopTime;
         private static double minutesToStart;
         private static bool _readyToStarta;
@@ -51,14 +54,13 @@ namespace Questor
         public static bool stopTimeSpecified = false;
 
         private static DateTime _lastPulse;
-        private static DateTime _startTime;
 
         public static DateTime startTime
         {
-           get 
-           {
-              return _startTime; 
-           }
+            get
+            {
+                return _startTime;
+            }
         }
 
         public static int maxRuntime
@@ -91,6 +93,9 @@ namespace Questor
                 v => _scriptFile = v },
                 { "l|login", "login only and exit.",
                 v => _loginOnly = v != null },
+                { "r|runtime=", "Quit Questor after {RUNTIME} minutes.",
+                v => _maxRuntime = Int32.Parse(v) },
+
                 { "x|chantling", "use chantling's scheduler",
                 v => _chantlingScheduler = v != null },
                 { "h|help", "show this message and exit",
@@ -119,6 +124,8 @@ namespace Questor
                 Logging.Log(sw.ToString());
                 return;
             }
+
+            _startTime = DateTime.Now;
 
             if (_chantlingScheduler && string.IsNullOrEmpty(_character))
             {
@@ -156,44 +163,44 @@ namespace Questor
                         _username = _schedule.User;
                         _password = _schedule.PW;
                     }
-                    _startTime = _schedule.Start;
+                    _startTimeChantling = _schedule.Start;
                     if (_schedule.startTimeSpecified)
-                        _startTime = _startTime.AddSeconds((double)(_r.Next(0, (_randStartDelay * 60))));
+                        _startTimeChantling = _startTimeChantling.AddSeconds((double)(_r.Next(0, (_randStartDelay * 60))));
                     _stopTime = _schedule.Stop;
 
-                    if ((DateTime.Now > _startTime))
+                    if ((DateTime.Now > _startTimeChantling))
                     {
-                        if ((DateTime.Now.Subtract(_startTime).TotalMinutes < 720)) //if we're less than 12 hours past start time, start now
+                        if ((DateTime.Now.Subtract(_startTimeChantling).TotalMinutes < 720)) //if we're less than 12 hours past start time, start now
                         {
-                            _startTime = DateTime.Now;
+                            _startTimeChantling = DateTime.Now;
                             _readyToStarta = true;
                         }
                         else
-                            _startTime = _startTime.AddDays(1); //otherwise, start tomorrow at start time
+                            _startTimeChantling = _startTimeChantling.AddDays(1); //otherwise, start tomorrow at start time
                     }
                     else
-                        if ((_startTime.Subtract(DateTime.Now).TotalMinutes > 720)) //if we're more than 12 hours shy of start time, start now
+                        if ((_startTimeChantling.Subtract(DateTime.Now).TotalMinutes > 720)) //if we're more than 12 hours shy of start time, start now
                         {
-                            _startTime = DateTime.Now;
+                            _startTimeChantling = DateTime.Now;
                             _readyToStarta = true;
                         }
-                    if (_stopTime < _startTime)
+                    if (_stopTime < _startTimeChantling)
                         _stopTime = _stopTime.AddDays(1);
 
                     if (_schedule.RunTime > 0) //if runtime is specified, overrides stop time
-                        _stopTime = _startTime.AddHours(_schedule.RunTime);
+                        _stopTime = _startTimeChantling.AddHours(_schedule.RunTime);
 
                     string _stopTimeText = "No stop time specified";
                     stopTimeSpecified = _schedule.stopTimeSpecified;
                     if (stopTimeSpecified)
                         _stopTimeText = _stopTime.ToString();
 
-                    Logging.Log("[Startup] Start Time: " + _startTime + " - Stop Time: " + _stopTimeText);
+                    Logging.Log("[Startup] Start Time: " + _startTimeChantling + " - Stop Time: " + _stopTimeText);
 
                     if (!_readyToStarta)
                     {
-                        minutesToStart = _startTime.Subtract(DateTime.Now).TotalMinutes;
-                        Logging.Log("[Startup] Starting at " + _startTime + ". " + String.Format("{0:0.##}", minutesToStart) + " minutes to go.");
+                        minutesToStart = _startTimeChantling.Subtract(DateTime.Now).TotalMinutes;
+                        Logging.Log("[Startup] Starting at " + _startTimeChantling + ". " + String.Format("{0:0.##}", minutesToStart) + " minutes to go.");
                         _timer.Elapsed += new ElapsedEventHandler(TimerEventProcessor);
                         if (minutesToStart > 0)
                             _timer.Interval = (int)(minutesToStart * 60000);
@@ -231,6 +238,12 @@ namespace Questor
                 while (!_done)
                 {
                     System.Threading.Thread.Sleep(50);
+
+                    if (DateTime.Now.Subtract(started).TotalSeconds > 180)
+                    {
+                        Logging.Log("auto login timed out after 3 minutes");
+                        break;
+                    }
                 }
 
                 _directEve.Dispose();
@@ -240,7 +253,7 @@ namespace Questor
                     return;
             }
 
-            _startTime = DateTime.Now;
+
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -249,6 +262,7 @@ namespace Questor
 
         static void OnFrame(object sender, EventArgs e)
         {
+            if (DateTime.Now.Subtract(_lastPulse).TotalSeconds < 10)
             if (!_readyToStart)
                 return;
 
@@ -268,11 +282,20 @@ namespace Questor
                 return;
             }
 
+            // We are not ready, lets wait
+            if (_directEve.Login.IsConnecting || _directEve.Login.IsLoading)
+                return;
+
+            // Are we at the login or character selection screen?
+            if (!_directEve.Login.AtLogin && !_directEve.Login.AtCharacterSelection)
+                return;
+
             // We shouldn't get any window
             if (_directEve.Windows.Count != 0)
             {
                 foreach(var window in _directEve.Windows)
                 {
+                    if (string.IsNullOrEmpty(window.Html))
                     if (window.Name == "telecom")
                     {
                         Logging.Log("Questor: Closing telecom message...");
@@ -281,6 +304,8 @@ namespace Questor
                         continue;
                     }
 
+                    if (window.Html.Contains("Please make sure your characters are out of harms way"))
+                        continue;
                     // Modal windows must be closed
                     // But lets only close known modal windows
                     if (window.Name == "modal")
@@ -308,6 +333,7 @@ namespace Questor
                             _pulsedelay = 60;
                         }
 
+                    if (window.Name == "telecom")
                         if (close)
                         {
                             Logging.Log("Questor: Closing modal window...");
@@ -377,7 +403,6 @@ namespace Questor
                     slot.Activate();
                     return;
                 }
-
                 Logging.Log("[Startup] Character id/name [" + _character + "] not found, retrying in 10 seconds");
             }
         }
