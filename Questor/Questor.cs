@@ -231,6 +231,7 @@ namespace Questor
                         close |= window.Html.Contains("This gate is locked!");
                         close |= window.Html.Contains("The Zbikoki's Hacker Card");
                         close |= window.Html.Contains(" units free.");
+                        close |= window.Html.Contains("already full");
                     }
 
                     if (close)
