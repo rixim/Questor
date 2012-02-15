@@ -125,6 +125,7 @@ namespace Questor.Modules
                 //       and the bot wont go into Panic mode while still "StartPanicking"
                 case PanicState.StartPanicking:
                 case PanicState.Panicking:
+
                     // Add any warp scramblers to the priority list
                     Cache.Instance.AddPriorityTargets(Cache.Instance.TargetedBy.Where(t => t.IsWarpScramblingMe), Priority.WarpScrambler);
 

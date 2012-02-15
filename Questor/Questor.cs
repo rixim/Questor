@@ -78,6 +78,7 @@ namespace Questor
             Cache.Instance.DirectEve = _directEve;
 
             Cache.Instance.StopTimeSpecified = Program.stopTimeSpecified;
+            Cache.Instance.StopTime = Program._stopTime;
 
             _directEve.OnFrame += OnFrame;
         }
@@ -101,6 +102,9 @@ namespace Questor
         public int LostDrones { get; set; }
         public double AmmoValue { get; set; }
         public double AmmoConsumption { get; set; }
+        public DateTime MissionEndTime { get; set; }
+        public long MissionSpaceSolarID { get; set; }
+        public string MissionEnemyFaction { get; set; }
 
    
         public void SettingsLoaded(object sender, EventArgs e)
@@ -373,6 +377,17 @@ namespace Questor
                         
                         // Disable next log line
                         Mission = null;
+                        
+                        // Do additional logging of mission space faction ID and salvage/mission times seperately
+                        var filename2 = Path.Combine(path, Cache.Instance.FilterPath(CharacterName) + ".morestats.log");
+                        if (!File.Exists(filename2))
+                            File.AppendAllText(filename2, "Time;SpaceSolarID;EnemyFactionName;MissionTime;SalvageTime;\r\n");
+                        var line2 = string.Format("{0:dd/MM/yyyy HH:mm:ss}", DateTime.Now) + ";";
+                        line2 += ((int)MissionSpaceSolarID) + ";";
+                        line2 += MissionEnemyFaction + ";";
+                        line2 += ((int)MissionEndTime.Subtract(Started).TotalMinutes) + ";";
+                        line2 += ((int)DateTime.Now.Subtract(MissionEndTime).TotalMinutes) + ";\r\n";
+                        File.AppendAllText(filename2, line2);
                     }
 
                     if (AutoStart)
@@ -458,6 +473,7 @@ namespace Questor
                             // Update loyalty points again (the first time might return -1)
                             LoyaltyPoints = Cache.Instance.Agent.LoyaltyPoints;
                             Mission = mission.Name;
+                            MissionEnemyFaction = Cache.Instance.factionName;
                         }
 
                         _agentInteraction.State = AgentInteractionState.Idle;
@@ -557,6 +573,9 @@ namespace Questor
                     break;
 
                 case QuestorState.ExecuteMission:
+
+                    MissionSpaceSolarID = Cache.Instance.DirectEve.Session.SolarSystemId ?? -1;
+
                     watch.Reset();
                     watch.Start();
                     _combat.ProcessState();
@@ -727,6 +746,7 @@ namespace Questor
                     {
                         _agentInteraction.State = AgentInteractionState.Idle;
                         State = QuestorState.UnloadLoot;
+                        MissionEndTime = DateTime.Now;
                     }
                     break;
 

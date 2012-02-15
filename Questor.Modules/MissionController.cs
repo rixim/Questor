@@ -58,7 +58,7 @@ namespace Questor.Modules
             {
                 // Reloading energy weapons prematurely just results in unnecessary error messages, so let's not do that
                 if (weapon.IsEnergyWeapon)
-                   return;
+                    return;
 
                 if (weapon.CurrentCharges >= weapon.MaxCharges)
                     return;
